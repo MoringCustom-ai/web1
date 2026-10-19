@@ -1,0 +1,257 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Мини-приложение «Шесть месяцев» (Copy)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: one phone-width column (Telegram mini app, dark theme), two tabs switched by a bottom tab bar */
+:root {
+  color-scheme: dark;
+  --page: #0c131b;
+  --bg: #17212b;
+  --card: #1f2c3a;
+  --line: #2a3a4b;
+  --text: #f2f5f8;
+  --hint: #8a9aab;
+  --link: #6ab3f3;
+  --ok: #4cc27c;
+  --part: #e6b54a;
+  --fail: #e8625c;
+  --none: #34445a;
+  --future: #222f3d;
+  --f: "Onest", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--page); color: var(--text); font-family: var(--f);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px; box-sizing: border-box; }
+* { box-sizing: border-box; }
+.wrap { max-width: 420px; margin: 0 auto; display: grid; gap: 10px; }
+.note { font-size: 12px; color: var(--hint); text-align: center; line-height: 1.4; }
+.app { background: var(--bg); border-radius: 22px; border: 1px solid var(--line); overflow: hidden; display: flex; flex-direction: column; min-height: min(860px, calc(100vh - 80px)); }
+.top { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+.top b { font-size: 15px; font-weight: 700; display: block; }
+.top span { font-size: 12.5px; color: var(--hint); }
+.close { color: var(--link); font-size: 14px; font-weight: 500; }
+.badge { font-size: 11px; font-weight: 600; color: var(--part); border: 1px solid rgba(230,181,74,.45); border-radius: 6px; padding: 3px 6px; white-space: nowrap; }
+main { flex: 1; overflow-y: auto; padding: 14px 12px 20px; display: grid; gap: 12px; align-content: start; }
+.card { background: var(--card); border-radius: 16px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--hint); letter-spacing: .02em; }
+.row { display: flex; align-items: center; gap: 14px; }
+.big { font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.big small { font-size: 16px; font-weight: 600; color: var(--hint); }
+.sub { font-size: 13px; color: var(--hint); line-height: 1.4; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tile { background: var(--bg); border-radius: 12px; padding: 10px; display: grid; gap: 4px; }
+.tile b { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile span { font-size: 11.5px; color: var(--hint); line-height: 1.3; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cell { aspect-ratio: 1; border-radius: 9px; display: grid; place-items: center; font-size: 12.5px; font-weight: 600; cursor: pointer; border: 2px solid transparent; font-variant-numeric: tabular-nums; max-width: 100%; }
+.cell.ok { background: var(--ok); color: #0d2417; }
+.cell.part { background: var(--part); color: #2a1f05; }
+.cell.fail { background: var(--fail); color: #2c0b0a; }
+.cell.none { background: var(--none); color: var(--hint); }
+.cell.future { background: var(--future); color: #4a5a6c; cursor: default; }
+.cell.sel { border-color: var(--text); }
+.cell.today { box-shadow: 0 0 0 2px var(--link) inset; }
+.caption { font-size: 13px; color: var(--text); min-height: 18px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 14px; font-size: 12px; color: var(--hint); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.split { display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px; }
+.split div { height: 100%; }
+.compare { display: grid; gap: 8px; }
+.cmp { display: grid; grid-template-columns: 64px 1fr 40px; gap: 10px; align-items: center; font-size: 13px; }
+.cmp .bar { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+.cmp .bar div { height: 100%; border-radius: 5px; }
+.cmp b { text-align: right; font-variant-numeric: tabular-nums; }
+.ring { flex: none; }
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart rect.hit { cursor: pointer; }
+.month { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.month div { height: 6px; border-radius: 3px; background: var(--future); }
+.month div.on { background: var(--link); }
+.month div.half { background: linear-gradient(90deg, var(--link) 30%, var(--future) 30%); }
+.btn { background: #5288c1; color: #fff; border: 0; border-radius: 12px; padding: 13px; font: 600 14.5px var(--f); cursor: pointer; width: 100%; }
+.btn:hover { background: #5f95ce; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); background: var(--bg); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabs button { background: none; border: 0; color: var(--hint); font: 500 12px var(--f); padding: 9px 0 10px; cursor: pointer; display: grid; gap: 3px; justify-items: center; }
+.tabs button .ico { font-size: 19px; line-height: 1; filter: grayscale(1) opacity(.7); }
+.tabs button[aria-selected="true"] { color: var(--link); }
+.tabs button[aria-selected="true"] .ico { filter: none; }
+button:focus-visible, .cell:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.list { display: grid; gap: 8px; }
+.li { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+.ava { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #fff; flex: none; }
+.li .grow { flex: 1; min-width: 0; }
+.li b { font-variant-numeric: tabular-nums; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #2a3a4b; padding: 10px 16px; border-radius: 12px; font-size: 13.5px; max-width: calc(100% - 32px); text-align: center; }
+</style>
+
+<div class="wrap">
+  <div class="note">Прототип мини-приложения клуба. Все цифры — пример, в реальности их подставит бот из отметок.</div>
+  <div class="app">
+    <div class="top">
+      <div><b>Шесть месяцев</b><span>Дофаминовый детокс · 14 дней</span></div>
+      <span class="badge">пример данных</span>
+    </div>
+    <main id="me" role="tabpanel" aria-label="Мой путь"></main>
+    <main id="club" role="tabpanel" aria-label="Клуб" hidden></main>
+    <nav class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="me"><span class="ico">🔥</span>Мой путь</button>
+      <button role="tab" aria-selected="false" data-tab="club"><span class="ico">👥</span>Клуб</button>
+    </nav>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const TOTAL = 14, TODAY = 9;
+// my marks per day: ok / part / fail / none
+const MY = ['ok','none','ok','part','fail','ok','ok','ok','ok'];
+// club per day: [выдержали, частично, сорвались, активных участников]
+const CLUB = [[48,8,4,62],[45,9,5,63],[41,10,7,64],[38,11,8,65],[40,9,6,66],[36,12,9,67],[39,10,7,68],[37,11,8,69],[34,11,7,70]];
+const LABEL = { ok: 'выдержал ✅', part: 'частично 🟡', fail: 'сорвался ❌', none: 'не отмечен ⚪' };
+const C = { ok: 'var(--ok)', part: 'var(--part)', fail: 'var(--fail)', none: 'var(--none)' };
+
+function streaks(arr) {
+  let cur = 0, best = 0;
+  for (const m of arr) { if (m === 'ok') cur++; else if (m === 'part') {} else cur = 0; best = Math.max(best, cur); }
+  return { cur, best };
+}
+const cnt = k => MY.filter(m => m === k).length;
+const myPct = Math.round(cnt('ok') / MY.length * 100);
+const clubPct = Math.round(CLUB.reduce((s, d) => s + d[0] / d[3], 0) / CLUB.length * 100);
+const { cur, best } = streaks(MY);
+
+function ring(day, total) {
+  const r = 30, c = 2 * Math.PI * r, p = day / total;
+  return `<svg class="ring" width="76" height="76" viewBox="0 0 76 76" aria-hidden="true">
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--bg)" stroke-width="8"/>
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--link)" stroke-width="8" stroke-linecap="round"
+      stroke-dasharray="${c * p} ${c}" transform="rotate(-90 38 38)"/>
+    <text x="38" y="43" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="700" font-family="Onest, sans-serif">${Math.round(p * 100)}%</text></svg>`;
+}
+
+function renderMe() {
+  const cells = Array.from({ length: TOTAL }, (_, i) => {
+    const d = i + 1, m = MY[i];
+    if (!m) return `<div class="cell future" aria-label="День ${d}, впереди">${d}</div>`;
+    return `<div class="cell ${m}${d === TODAY ? ' today' : ''}" tabindex="0" role="button" data-day="${d}" aria-label="День ${d}: ${LABEL[m]}">${d}</div>`;
+  }).join('');
+  const split = ['ok','part','fail','none'].map(k => cnt(k) ? `<div style="flex:${cnt(k)};background:${C[k]}"></div>` : '').join('');
+  document.getElementById('me').innerHTML = `
+    <section class="card">
+      <div class="row">${ring(TODAY, TOTAL)}
+        <div><div class="big">День ${TODAY} <small>из ${TOTAL}</small></div>
+        <div class="sub" style="margin-top:6px">Осталось ${TOTAL - TODAY} дней до конца челленджа</div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><b>🔥 ${cur}</b><span>текущая серия</span></div>
+        <div class="tile"><b>${best}</b><span>лучшая серия</span></div>
+        <div class="tile"><b>${myPct}%</b><span>дней выдержал</span></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Мои 14 дней</h2>
+      <div class="cal" id="cal">${cells}</div>
+      <div class="caption" id="calCap">Нажми на день, чтобы посмотреть отметку</div>
+      <div class="legend"><span><i style="background:var(--ok)"></i>Выдержал ${cnt('ok')}</span><span><i style="background:var(--part)"></i>Частично ${cnt('part')}</span><span><i style="background:var(--fail)"></i>Сорвался ${cnt('fail')}</span><span><i style="background:var(--none)"></i>Не отмечен ${cnt('none')}</span></div>
+      <div class="split" aria-hidden="true">${split}</div>
+    </section>
+    <section class="card">
+      <h2>Я и клуб</h2>
+      <div class="compare">
+        <div class="cmp"><span>Ты</span><div class="bar"><div style="width:${myPct}%;background:var(--link)"></div></div><b>${myPct}%</b></div>
+        <div class="cmp"><span>Клуб</span><div class="bar"><div style="width:${clubPct}%;background:var(--hint)"></div></div><b>${clubPct}%</b></div>
+      </div>
+      <div class="sub">Доля дней «Выдержал» с начала челленджа. ${myPct >= clubPct ? 'Ты идёшь ровнее, чем клуб в среднем 💪' : 'Клуб идёт чуть ровнее, но твой темп — твой. Главное не выпадать.'}</div>
+    </section>
+    <section class="card">
+      <h2>Мои полгода в клубе</h2>
+      <div class="month" aria-label="Месяц 1 из 6"><div class="half"></div><div></div><div></div><div></div><div></div><div></div></div>
+      <div class="sub">Месяц 1 из 6 · в клубе ${TODAY} дней</div>
+    </section>
+    <button class="btn" id="toChat">💬 Открыть чат клуба</button>`;
+  document.getElementById('cal').addEventListener('click', e => pickDay(e.target.closest('[data-day]')));
+  document.getElementById('cal').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickDay(e.target.closest('[data-day]')); } });
+  document.getElementById('toChat').addEventListener('click', () => toast('Здесь откроется закрытый чат клуба'));
+}
+function pickDay(el) {
+  if (!el) return;
+  document.querySelectorAll('#cal .sel').forEach(x => x.classList.remove('sel'));
+  el.classList.add('sel');
+  const d = +el.dataset.day;
+  document.getElementById('calCap').textContent = `День ${d}${d === TODAY ? ' (сегодня)' : ''}: ${LABEL[MY[d - 1]]}`;
+}
+
+function clubChart() {
+  const W = 360, H = 170, padL = 30, padB = 22, padT = 8, n = TOTAL;
+  const bw = (W - padL - 4) / n, ih = H - padB - padT;
+  const y = v => padT + ih * (1 - v);
+  let g = '';
+  [0, .5, 1].forEach(v => { g += `<line x1="${padL}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${padL - 6}" y="${y(v) + 4}" text-anchor="end" fill="var(--hint)" font-size="10">${v * 100}%</text>`; });
+  for (let i = 0; i < n; i++) {
+    const x = padL + i * bw + 2, w = bw - 4, d = CLUB[i];
+    g += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle" fill="${i + 1 === TODAY ? 'var(--text)' : 'var(--hint)'}" font-size="10" font-weight="${i + 1 === TODAY ? 700 : 400}">${i + 1}</text>`;
+    if (!d) { g += `<rect x="${x}" y="${y(1)}" width="${w}" height="${ih}" rx="3" fill="var(--future)"/>`; continue; }
+    const [ok, pa, fa, act] = d; let base = 0;
+    g += `<rect x="${x}" y="${y(1)}" width="${w}" height="${ih}" rx="3" fill="var(--none)"/>`;
+    [[ok, 'var(--ok)'], [pa, 'var(--part)'], [fa, 'var(--fail)']].forEach(([v, col]) => {
+      const h = ih * v / act; g += `<rect x="${x}" y="${y(base) - h}" width="${w}" height="${h}" fill="${col}"/>`; base += v / act;
+    });
+    g += `<rect class="hit" data-i="${i}" x="${x - 2}" y="${padT}" width="${bw}" height="${ih}" fill="transparent"/>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Отметки клуба по дням челленджа">${g}</svg>`;
+}
+function dayCaption(i) {
+  const [ok, pa, fa, act] = CLUB[i], none = act - ok - pa - fa;
+  return `День ${i + 1}${i + 1 === TODAY ? ' (сегодня)' : ''}: ✅ ${ok} · 🟡 ${pa} · ❌ ${fa} · не отметились ${none} из ${act}`;
+}
+function renderClub() {
+  const [ok, pa, fa, act] = CLUB[TODAY - 1], marked = ok + pa + fa;
+  const avgPart = Math.round(CLUB.reduce((s, d) => s + (d[0] + d[1] + d[2]) / d[3], 0) / CLUB.length * 100);
+  const people = [['Маша', 9, '#c86b9e'], ['Дима', 9, '#5c8fd6'], ['Аня', 8, '#3fa38a'], ['Артём', 7, '#d08a3c']];
+  document.getElementById('club').innerHTML = `
+    <section class="card">
+      <h2>Сегодня, день ${TODAY}</h2>
+      <div class="row" style="align-items:flex-end;justify-content:space-between">
+        <div><div class="big">${marked} <small>из ${act}</small></div><div class="sub" style="margin-top:6px">отметились сегодня</div></div>
+        <div class="sub" style="text-align:right">✅ ${ok} · 🟡 ${pa} · ❌ ${fa}</div>
+      </div>
+      <div class="split" aria-hidden="true"><div style="flex:${ok};background:var(--ok)"></div><div style="flex:${pa};background:var(--part)"></div><div style="flex:${fa};background:var(--fail)"></div><div style="flex:${act - marked};background:var(--none)"></div></div>
+      <div class="sub">${ok / act >= .7 ? 'Клуб держит строй 🔥' : ok / act >= .4 ? 'Нормальный день. Кто сорвался, напиши в чате, что выбило, вместе разберёмся.' : 'Тяжёлый день у клуба. Это нормально, завтра новый заход.'}</div>
+    </section>
+    <section class="card">
+      <h2>Клуб по дням</h2>
+      <div class="chart" id="chart">${clubChart()}</div>
+      <div class="caption" id="chartCap">${dayCaption(TODAY - 1)}</div>
+      <div class="legend"><span><i style="background:var(--ok)"></i>Выдержали</span><span><i style="background:var(--part)"></i>Частично</span><span><i style="background:var(--fail)"></i>Сорвались</span><span><i style="background:var(--none)"></i>Не отметились</span></div>
+    </section>
+    <section class="tiles">
+      <div class="tile" style="background:var(--card)"><b>${act}</b><span>участников в челлендже</span></div>
+      <div class="tile" style="background:var(--card)"><b>${avgPart}%</b><span>отмечаются в среднем</span></div>
+      <div class="tile" style="background:var(--card)"><b>+12</b><span>новых за неделю</span></div>
+    </section>
+    <section class="card">
+      <h2>Держат серию 7+ дней</h2>
+      <div class="list">${people.map(([n, d, c]) => `<div class="li"><div class="ava" style="background:${c}">${n[0]}</div><div class="grow">${n}</div><b>🔥 ${d} дн.</b></div>`).join('')}</div>
+      <div class="sub">Показываем только тех, кто разрешил поздравления в чате. Всего с серией 7+: 11 человек.</div>
+    </section>`;
+  document.getElementById('chart').addEventListener('click', e => {
+    const r = e.target.closest('.hit'); if (r) document.getElementById('chartCap').textContent = dayCaption(+r.dataset.i);
+  });
+}
+
+document.querySelector('.tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  document.getElementById('me').hidden = b.dataset.tab !== 'me';
+  document.getElementById('club').hidden = b.dataset.tab !== 'club';
+});
+let tt;
+function toast(t) { const el = document.getElementById('toast'); el.textContent = t; el.hidden = false; clearTimeout(tt); tt = setTimeout(() => el.hidden = true, 2000); }
+renderMe(); renderClub();
+</script>
+
+</body></html>
