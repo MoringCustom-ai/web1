@@ -239,22 +239,23 @@ def active_subscribers(path: str = DB_PATH) -> list[sqlite3.Row]:
 # ------------------------------------------------------------- challenges
 def ensure_default_challenge(key: str, title: str, description: str, duration_days: int,
                              start_date: str, activate: bool = True,
-                             path: str = DB_PATH) -> int:
+                             path: str = DB_PATH) -> dict:
     with get_conn(path) as conn:
         row = conn.execute("SELECT id FROM challenges WHERE key=?", (key,)).fetchone()
         if row:
             cid = row["id"]
             if activate:
                 conn.execute("UPDATE challenges SET is_active=1 WHERE id=?", (cid,))
-            return cid
-        if activate:
-            conn.execute("UPDATE challenges SET is_active=0")
-        cur = conn.execute(
-            """INSERT INTO challenges(key, title, description, duration_days, start_date, is_active)
-               VALUES(?,?,?,?,?,?)""",
-            (key, title, description, duration_days, start_date, int(activate)),
-        )
-        return cur.lastrowid
+        else:
+            if activate:
+                conn.execute("UPDATE challenges SET is_active=0")
+            cur = conn.execute(
+                """INSERT INTO challenges(key, title, description, duration_days, start_date, is_active)
+                   VALUES(?,?,?,?,?,?)""",
+                (key, title, description, duration_days, start_date, int(activate)),
+            )
+            cid = cur.lastrowid
+        return conn.execute("SELECT * FROM challenges WHERE id=?", (cid,)).fetchone()
 
 
 def get_active_challenge(path: str = DB_PATH) -> Optional[sqlite3.Row]:
@@ -399,6 +400,38 @@ def all_users_for_csv(path: str = DB_PATH) -> list[sqlite3.Row]:
         ).fetchall()
 
 
+def users_with_streak(challenge_id: int, min_days: int = 7,
+                      path: str = DB_PATH) -> list[tuple[str, int]]:
+    """Имена участников с текущей серией >= min_days (для недельного поста)."""
+    import utils  # локальный импорт: utils не тянет БД, но избегаем циклов на уровне модулей
+    out = []
+    for p in challenge_participants(challenge_id, path):
+        marks = user_marks(p["user_id"], challenge_id, path)
+        dates = utils.user_day_dates(p["joined_date"], _challenge_duration(challenge_id, path))
+        st = calc_streaks([marks.get(d) for d in dates])
+        if st.current >= min_days:
+            u = get_user(p["user_id"], path)
+            name = (u["first_name"] or u["username"] or f"User{p['user_id']}") if u else "?"
+            out.append((name, st.current))
+    out.sort(key=lambda x: -x[1])
+    return out
+
+
+def new_members_last_week(path: str = DB_PATH, days: int = 7) -> int:
+    cutoff = (dt.datetime.now() - dt.timedelta(days=days)).isoformat()
+    with get_conn(path) as conn:
+        return conn.execute(
+            "SELECT COUNT(*) c FROM users WHERE created_at >= ?", (cutoff,)
+        ).fetchone()["c"]
+
+
+def _challenge_duration(challenge_id: int, path: str = DB_PATH) -> int:
+    with get_conn(path) as conn:
+        row = conn.execute("SELECT duration_days FROM challenges WHERE id=?",
+                           (challenge_id,)).fetchone()
+    return row["duration_days"] if row else 14
+
+
 @dataclass
 class Streaks:
     current: int = 0
@@ -406,7 +439,9 @@ class Streaks:
 
 
 def calc_streaks(values_in_order: list[str | None]) -> Streaks:
-    """Как streaks() в мини-приложении: ok удлиняет серию, part не сбрасывает, fail сбрасывает."""
+    """Как streaks() в мини-приложении: ok удлиняет серию, part не сбрасывает, fail сбрасывает.
+    Текущая серия считается от последнего дня назад; ещё не наступившие/неотмеченные дни
+    в конце (None) серию не обрывают."""
     cur = best = 0
     for m in values_in_order:
         if m == "ok":
@@ -416,4 +451,15 @@ def calc_streaks(values_in_order: list[str | None]) -> Streaks:
         else:
             cur = 0
         best = max(best, cur)
+    # current — как в прототипе: идём с конца, пропуская хвост из None
+    cur = 0
+    for m in reversed(values_in_order):
+        if m is None:
+            continue
+        if m == "ok":
+            cur += 1
+        elif m == "part":
+            continue
+        else:
+            break
     return Streaks(current=cur, best=best)

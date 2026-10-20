@@ -6,6 +6,12 @@
 """
 import os
 
+try:  # загружаем .env из корня проекта, если есть (python-dotenv)
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # ---------------------------------------------------------------------------
 # Секреты и параметры окружения (берём из переменных / .env)
 # ---------------------------------------------------------------------------
@@ -13,13 +19,17 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]                      # токен Telegram-�
 ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
 
 # Продамус (prodamus.pro) — приём оплат + рекуррентные автопродления
-PRODAMUS_SHOP_ID = os.environ["PRODAMUS_SHOP_ID"]        # id магазина (product_id в форме)
-PRODAMUS_SECRET_KEY = os.environ["PRODAMUS_SECRET_KEY"]  # секретная подпись ipn_check
+PRODAMUS_SHOP_ID = os.environ.get("PRODAMUS_SHOP_ID", "")        # id магазина (product_id в форме)
+PRODAMUS_SECRET_KEY = os.environ.get("PRODAMUS_SECRET_KEY", "")  # секретная подпись ipn_check
 PRODAMUS_FORM_URL = "https://my.prodams.ru/{shop_id}"    # форма оплаты (подставится shop_id)
 
 # Закрытый чат клуба
-CHAT_CLUB_ID = int(os.environ["CHAT_CLUB_ID"])           # id чата, напр. -1001234567890
+CHAT_CLUB_ID = int(os.getenv("CHAT_CLUB_ID", "0"))      # id чата, напр. -1001234567890
 CHAT_CLUB_INVITE_URL = os.getenv("CHAT_CLUB_INVITE_URL", "")  # постоянная ссылка-приглашение
+
+# Вебхук Продамус
+WEBHOOK_HOST = os.getenv("WEBHOOK_HOST", "http://localhost")     # публичный HTTPS-домен бота
+WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", "8081"))            # локальный порт aiohttp-сервера
 
 # Часовой пояс клуба и время ежедневного напоминания
 TZ = os.getenv("TZ", "Europe/Moscow")
@@ -132,7 +142,11 @@ TEXTS = {
         "📊 Твоя динамика — {chal_title}\n\n"
         "{calendar}\n\n"
         "✅ выдержал: {ok} · 🟡 частично: {part} · ❌ сорвался: {fail} · ⚪ не отмечено: {none}\n"
-        "🔥 Серия сейчас: {streak} · лучшая: {best}"
+        "🔥 Серия сейчас: {streak} · лучшая: {best}\n\n"
+        "📅 Мои полгода в клубе: месяц {month} из 6\n\n"
+        "⚖️ Ты vs Клуб — доля дней «выдержал»:\n"
+        "Ты: {my_pct}% · Клуб: {club_pct}%\n"
+        "{vs_comment}"
     ),
     "chat_daily_post": (
         "📈 ДИНАМИКА КЛУБА — {chal_title}, день {day} из {total}\n\n"
@@ -145,7 +159,9 @@ TEXTS = {
         "За 7 дней клуб отметил: {week_marked} отметок\n"
         "✅ выдержали: {w_ok} · 🟡 частично: {w_part} · ❌ сорвались: {w_fail}\n"
         "В среднем отмечается {avg_pct}% участников в день.\n"
-        "С серией 7+ дней: {long_streaks} человек 💪"
+        "Новых за неделю: {new_members}\n\n"
+        "Держат серию 7+ дней: {long_streaks} человек 💪\n{streaks_list}\n"
+        "(Показываем только тех, кто разрешил поздравления в чате.)"
     ),
     "join_challenge": (
         "🏁 Ты вступил в челлендж «{chal_title}»!\n"
