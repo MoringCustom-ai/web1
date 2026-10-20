@@ -359,10 +359,33 @@ async def cmd_trend(event: Message | CallbackQuery):
         return
     st = _personal_stats(user_id, ch)
     cal = utils.calendar_line(st["values"], st["day_idx"])
+    # «Ты vs Клуб» — доля дней «выдержал», как в мини-приложении
+    my_total = sum(1 for v in st["values"] if v) or 0
+    my_pct = round(st["ok"] / my_total * 100) if my_total else 0
+    parts = db.challenge_participants(ch["id"])
+    club_ok = club_all = 0
+    for p in parts:
+        j = dt.date.fromisoformat(p["joined_date"])
+        span = (utils.today() - j).days + 1
+        span = min(span, ch["duration_days"])
+        pm = db.user_marks(p["user_id"], ch["id"])
+        dates = utils.user_day_dates(p["joined_date"], ch["duration_days"])[:span]
+        vals = [pm.get(d) for d in dates]
+        club_ok += sum(1 for v in vals if v == "ok")
+        club_all += sum(1 for v in vals if v)
+    club_pct = round(club_ok / club_all * 100) if club_all else 0
+    vs_comment = ("Ты идёшь ровнее, чем клуб в среднем 💪" if my_pct >= club_pct else
+                  "Клуб идёт чуть ровнее, но твой темп — твой. Главное не выпадать.")
+    sub = db.get_active_subscription(user_id)
+    month = 1
+    if sub:
+        started = utils.parse_iso(sub["started_at"]).date()
+        month = max(1, min(6, (utils.today() - started).days // 30 + 1))
     text = config.TEXTS["personal_trend"].format(
         chal_title=ch["title"], calendar=cal,
         ok=st["ok"], part=st["part_count"], fail=st["fail_count"], none=st["none_count"],
         streak=st["streaks"].current, best=st["streaks"].best,
+        month=month, my_pct=my_pct, club_pct=club_pct, vs_comment=vs_comment,
     )
     await message.answer(text)
     if isinstance(event, CallbackQuery):

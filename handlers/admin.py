@@ -209,9 +209,9 @@ async def cmd_start_challenge(message: Message):
     start_yesterday = (utils.today() - dt.timedelta(days=1)).isoformat()
     if not arg:
         d = config.DEFAULT_CHALLENGE
-        cid = db.ensure_default_challenge(
+        ch_row = db.ensure_default_challenge(
             d["key"], d["title"], d["description"], d["duration_days"], start_yesterday)
-        title, days = d["title"], d["duration_days"]
+        cid, title, days = ch_row["id"], d["title"], d["duration_days"]
     else:
         # /start_challenge Дофаминовый детокс days=14   или   key=dopamine_detox ...
         kv = {}
@@ -225,7 +225,8 @@ async def cmd_start_challenge(message: Message):
         title = " ".join(words) or config.DEFAULT_CHALLENGE["title"]
         days = int(kv.get("days", config.DEFAULT_CHALLENGE["duration_days"]))
         key = kv.get("key", title.lower().replace(" ", "_")[:32])
-        cid = db.ensure_default_challenge(key, title, title, days, start_yesterday)
+        ch_row = db.ensure_default_challenge(key, title, title, days, start_yesterday)
+        cid = ch_row["id"]
     # авто-вступление активных подписчиков, кто ещё не в челлендже
     subs = db.active_subscribers()
     for s in subs:

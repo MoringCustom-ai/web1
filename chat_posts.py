@@ -60,16 +60,14 @@ async def post_weekly_summary(bot: Bot) -> None:
         per_day = [db.day_stats(ch["id"], d, parts) for d in dates]
         rates = [(s["ok"] + s["part"] + s["fail"]) / s["active"] for s in per_day if s["active"]]
         avg_pct = round(sum(rates) / len(rates) * 100) if rates else 0
-    long_streaks = 0
-    for p in parts:
-        st_vals = [db.user_marks(p["user_id"], ch["id"]).get(d)
-                   for d in sorted(db.user_marks(p["user_id"], ch["id"]))]
-        if db.calc_streaks(st_vals).best >= 7:
-            long_streaks += 1
+    names = db.users_with_streak(ch["id"], min_days=7)
+    streaks_line = "\n".join(f"🔥 {n} — {d} дн." for n, d in names[:10]) or "пока нет"
+    new_members = db.new_members_last_week()
     text = config.TEXTS["chat_weekly_post"].format(
         chal_title=ch["title"], week_marked=w["marked"],
         w_ok=w["ok"], w_part=w["part"], w_fail=w["fail"],
-        avg_pct=avg_pct, long_streaks=long_streaks)
+        avg_pct=avg_pct, long_streaks=len(names),
+        streaks_list=streaks_line, new_members=new_members)
     try:
         await bot.send_message(config.CHAT_CLUB_ID, text)
         log.info("Weekly club post sent")
